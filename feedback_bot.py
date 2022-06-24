@@ -30,7 +30,6 @@ class FeedbackBot(commands.Bot):
 			return
 		
 		emoji = payload.emoji.name
-		print(f'id: {payload.emoji.id}\nname: {emoji}')
 		if emoji not in rating_emojis:
 			return
 		
