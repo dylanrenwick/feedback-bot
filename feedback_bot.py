@@ -2,17 +2,9 @@ import discord
 import discord.ext.commands as commands
 
 rating_emojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣']
-star_emoji = "⭐"
-
-file_exts = ['mp3', 'wav', 'avi', 'mpeg', 'mp4', 'ogg', 'flac']
-media_urls = [
-	'youtube.com', 'youtu.be',
-	'soundcloud.com', 'soundcloud.app.goo.gl',
-	'spotify.com'
-]
 
 class FeedbackBot(commands.Bot):
-	def __init__(self, watched_channels):
+	def __init__(self, config):
 		intents = discord.Intents(
 			guild_reactions = True,
 			members         = True,
@@ -20,10 +12,13 @@ class FeedbackBot(commands.Bot):
 		)
 		super().__init__(".", intents=intents)
 		self.remove_command("help")
-		self.channels = watched_channels
+		self.config = config
+
+	def run_bot(self):
+		self.run(self.config['token'])
 
 	async def on_message(self, message):
-		if message.channel.id not in self.channels:
+		if message.channel.id not in self.config['watched_channels']:
 			return
 
 		if self.is_audio_message(message):
@@ -31,7 +26,7 @@ class FeedbackBot(commands.Bot):
 			await self.add_rating_reactions(message)
 
 	async def on_raw_reaction_add(self, payload):
-		if payload.channel_id not in self.channels or payload.user_id == self.user.id:
+		if payload.channel_id not in self.config['watched_channels'] or payload.user_id == self.user.id:
 			return
 		
 		emoji = payload.emoji.name
@@ -54,7 +49,7 @@ class FeedbackBot(commands.Bot):
 		await self.handle_rating(message, channel, user, star_count)
 
 	async def handle_rating(self, message, channel, user, star_count):
-		stars = star_emoji * star_count
+		stars = self.config['star_emoji'] * star_count
 		embed = discord.Embed(
 			title       = "Updated Rating",
 			description = f"Users can vote on files and give ratings here, the file voted on is here: {message.jump_url}"
@@ -64,7 +59,7 @@ class FeedbackBot(commands.Bot):
 			fieldValue  = f"{message.content}"
 		else:
 			fieldName   = "File name"
-			fileName    = next(attach.filename for attach in message.attachments if attach.filename.split('.')[-1] in file_exts)
+			fileName    = next(attach.filename for attach in message.attachments if attach.filename.split('.')[-1] in self.config['file_exts'])
 			fieldValue  = f"{fileName}"
 		embed.add_field(
 			name   = fieldName,
@@ -114,7 +109,7 @@ class FeedbackBot(commands.Bot):
 		return self.has_audio_attachment(message) or self.has_media_link(message)
 
 	def has_audio_attachment(self, message):
-		return any([attach.filename.split('.')[-1] in file_exts for attach in message.attachments])
+		return any([attach.filename.split('.')[-1] in self.config['file_exts'] for attach in message.attachments])
 
 	def has_media_link(self, message):
-		return any([url in message.content for url in media_urls])
+		return any([url in message.content for url in self.config['media_urls']])
