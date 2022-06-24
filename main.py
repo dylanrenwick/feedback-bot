@@ -1,9 +1,14 @@
 from feedback_bot import FeedbackBot
+from configparser import ConfigParser
 
 #run token
 if __name__ == "__main__":
-	token = 'OTg5NTk4MjM5MDMwNDAzMDgy.Ggy-Pq.LTw8QzFBRr34S6zq3ki5Rfc5Tc91P9VWhfufj8'
-	token = 'NzA2NjgxOTQ5NTk4NTE1MjYx.GBBkgE.BJ2q10rab0UTdh59hDg94oOaZF2ypdJmcfdOrg'
+	config = ConfigParser()
+	config.read('config.ini')
+	if 'bot' not in config or 'token' not in config['bot']:
+		print("Could not read config file!")
+		exit(1)
+	token = config['bot']['token']
 	bot = FeedbackBot([706699759456354366])
 	bot.run(token)
 else:
